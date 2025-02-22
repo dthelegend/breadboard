@@ -24,13 +24,15 @@ def compile(file: str, /, *, output : str | None = None, scale: str = "fit", hei
         if output is None:
             output = Path("a.s")
         with open(output, "w") as f:
-            for instruction in image:
-                f.write(str(instruction))
+            f.write(f"# {image[0]}")
+            for instruction in image[1]:
+                f.write(f"{instruction}\n")
     else:
         if output is None:
             output = Path("a.out")
         with open(output, "wb") as f:
-            for instruction in image:
+            f.write(image[0].as_bytes())
+            for instruction in image[1]:
                 f.write(instruction.as_word())
 
 
@@ -164,9 +166,23 @@ class Jmp(Instruction):
     def as_word_impl(self) -> bytes:
         return b"\3" + b"\0" * (self.WORD_SIZE - 2) + bytes(self.inner)[0:1]
 
-def parse_pass(mat: cv2.Mat) -> Generator[Instruction]:
-    np_mat = np.array(mat)
+class FrameHeader:
+    instructions_length: int
 
-    for row in np_mat:
-        yield Toast(*row)
-        yield Pop()
+    def __init__(self, instructions_length: int):
+        self.instructions_length = instructions_length
+
+    def __str__(self):
+        return f"NUM. INSTRUCTIONS: {self.instructions_length}; WORD SIZE: {Instruction.WORD_SIZE}"
+
+    def as_bytes(self):
+        return bytes(self.instructions_length)[0:4] + bytes(Instruction.WORD_SIZE)[0:4]
+
+def parse_pass(mat: cv2.Mat) -> tuple[FrameHeader, Generator[Instruction]]:
+    np_mat = np.array(mat)
+    def inner():
+        for row in np_mat:
+            yield Toast(*row)
+            yield Pop()
+
+    return FrameHeader(len(np_mat)), inner()
