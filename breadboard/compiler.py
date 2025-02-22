@@ -24,7 +24,7 @@ def compile(file: str, /, *, output : str | None = None, scale: str = "fit", hei
         if output is None:
             output = Path("a.s")
         with open(output, "w") as f:
-            f.write(f"# {image[0]}")
+            f.write(f"# {image[0]}\n")
             for instruction in image[1]:
                 f.write(f"{instruction}\n")
     else:
