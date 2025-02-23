@@ -7,12 +7,13 @@ import numpy as np
 
 import cv2
 
-def compile(file: str, /, *, output : str | None = None, scale: str = "fit", height: int = 10, show: bool = False, asm: bool = False):
+def compile(file: str, /, *, output : str | None = None, scale: str = "fit", height: int = 8, show: bool = False, asm: bool = False):
     input_path = Path(file)
     resolution = (Instruction.WORD_SIZE - 1, height)
     if not input_path.exists():
         raise FileNotFoundError(f"{input_path} does not exist")
     image = cv2.imread(str(input_path.absolute()))
+    # image = cv2.flip(image, 0)
     image = lex_pass(image, scale, resolution)
     if show:
         cv2.imshow("image", cv2.resize(image, (640, 640), interpolation=cv2.INTER_NEAREST_EXACT))
@@ -82,7 +83,7 @@ def lex_pass(image: cv2.Mat, scale: str, resolution: tuple[int, int]):
         crop_y2 = min(center_y + target_height // 2, original_height)
 
         image = image[crop_y1:crop_y2, crop_x1:crop_x2]
-        image = cv2.resize(image, (target_width, target_height))
+        image = cv2.resize(image, (target_width, target_height), interpolation=cv2.INTER_NEAREST_EXACT)
     else:
         raise ValueError("Invalid scale_option. Available options: 'stretch', 'fit', 'crop'.")
 
@@ -99,7 +100,7 @@ TOAST
 JMP
 """
 class Instruction(abc.ABC):
-    WORD_SIZE = 11
+    WORD_SIZE = 9
 
     def __repr__(self):
         return NotImplemented
