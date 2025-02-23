@@ -15,7 +15,7 @@ def compile(file: str, /, *, output : str | None = None, scale: str = "fit", hei
     image = cv2.imread(str(input_path.absolute()))
     image = lex_pass(image, scale, resolution)
     if show:
-        cv2.imshow("image", image)
+        cv2.imshow("image", cv2.resize(image, (640, 640), interpolation=cv2.INTER_NEAREST_EXACT))
         while cv2.waitKey(0) != ord('q'):
             pass
         cv2.destroyAllWindows()
