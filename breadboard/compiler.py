@@ -114,7 +114,7 @@ class Instruction(abc.ABC):
         output: bytes = self.as_word_impl()
 
         assert len(output) <= self.WORD_SIZE
-        output += b"\0" * (len(output) - self.WORD_SIZE)
+        output += b"\0" * (self.WORD_SIZE - len(output))
         return output
 
 class Push(Instruction):
@@ -152,7 +152,10 @@ class Toast(Instruction):
         return f"TOAST {all_toasts}"
 
     def as_word_impl(self) -> bytes:
-        return reduce(lambda x, y : x + y, (bytes(x)[0:1] for x in self.inner), b"\3")
+        return reduce(
+            lambda x, y : x + y,
+            (int(x).to_bytes(1, byteorder="big") for x in self.inner), b"\3"
+        )
 
 class Jmp(Instruction):
     inner: int
@@ -164,7 +167,8 @@ class Jmp(Instruction):
         return f"JMP {self.inner}"
 
     def as_word_impl(self) -> bytes:
-        return b"\3" + b"\0" * (self.WORD_SIZE - 2) + bytes(self.inner)[0:1]
+        return b"\3" + b"\0" * (self.WORD_SIZE - 2) +\
+               self.inner.to_bytes(1, byteorder="big")
 
 class FrameHeader:
     instructions_length: int
@@ -176,7 +180,8 @@ class FrameHeader:
         return f"NUM. INSTRUCTIONS: {self.instructions_length}; WORD SIZE: {Instruction.WORD_SIZE}"
 
     def as_bytes(self):
-        return bytes(self.instructions_length)[0:4] + bytes(Instruction.WORD_SIZE)[0:4]
+        return self.instructions_length.to_bytes(4, byteorder="big") +\
+               Instruction.WORD_SIZE.to_bytes(4, byteorder="big")
 
 def parse_pass(mat: cv2.Mat) -> tuple[FrameHeader, Generator[Instruction]]:
     np_mat = np.array(mat)
@@ -185,4 +190,4 @@ def parse_pass(mat: cv2.Mat) -> tuple[FrameHeader, Generator[Instruction]]:
             yield Toast(*row)
             yield Pop()
 
-    return FrameHeader(len(np_mat)), inner()
+    return FrameHeader(len(np_mat) * 2), inner()
