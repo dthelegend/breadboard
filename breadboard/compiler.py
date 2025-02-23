@@ -129,7 +129,7 @@ class Noop(Instruction):
         return b"\0"
 
     def __str__(self):
-        return "PUSH"
+        return "NOOP"
 class Pop(Instruction):
     def as_word_impl(self):
         return b"\2"
